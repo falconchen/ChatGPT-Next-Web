@@ -99,21 +99,25 @@ export function PreCode(props: { children: any }) {
   );
 }
 
-function escapeDollarNumber(text: string) {
-  let escapedText = "";
-
-  for (let i = 0; i < text.length; i += 1) {
-    let char = text[i];
-    const nextChar = text[i + 1] || " ";
-
-    if (char === "$" && nextChar >= "0" && nextChar <= "9") {
-      char = "\\$";
+function escapeDollarNumber(text: string): string {
+  let isInBlockCode = false;
+  return text.split('\n').map(line => {
+    if (line.trim() === '```' || line.trim() === '`') {
+      isInBlockCode = !isInBlockCode;
+      return line;
     }
-
-    escapedText += char;
-  }
-
-  return escapedText;
+    if (!isInBlockCode) {
+      return line.split(/(`.*?`)/g).map((segment, index) => {
+        if (index % 2 === 0) {
+          return segment.replace(/(?<!\\)\$\d\w*([,.](\d\w*[,.])?\d\w*)?((?=\s\$)|(?!.*\$\B))/g, '\\$&');
+        } else {
+          return segment;
+        }
+      }).join('');
+    } else {
+      return line;
+    }
+  }).join('\n');
 }
 
 function escapeBrackets(text: string) {
